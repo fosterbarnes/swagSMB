@@ -1,0 +1,8 @@
+/bin/
+/obj/
+/.vs/
+/publish/
+/.installer/Output/
+/.md/
+/src/swagSMB/bin/
+/src/swagSMB/obj/
