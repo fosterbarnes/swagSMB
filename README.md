@@ -41,7 +41,6 @@ GUI frontend for SMBLibrary with some extras and improved security. Windows only
 - SMB1 is hard-disabled in code; SMB2 and SMB3 only.
 - Local share `LocalPath` validation: must be a fully-qualified path on a fixed local disk; UNC paths and reparse points/junctions are rejected.
 - Master-password retries throttled in-app (1.5s delay per failure, app exits after 5 consecutive failures).
-- Master-password minimum length 12; per-share NTLM password minimum length 8.
 - Two enabled shares with the same username but different passwords are rejected at startup (prevents auth-conflict bypass).
 
 ### What the app does NOT enforce (upstream SMBLibrary 1.5.7 limitations)

@@ -4,8 +4,8 @@ namespace swagSMB.Security
 {
     public static class PasswordPolicy
     {
-        public const int MasterMinimumLength = 12;
-        public const int ShareMinimumLength = 8;
+        public const int MasterMinimumLength = 4;
+        public const int ShareMinimumLength = 4;
 
         // Kept for backward compat; equals MasterMinimumLength.
         public const int MinimumLength = MasterMinimumLength;
