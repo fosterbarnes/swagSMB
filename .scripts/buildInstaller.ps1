@@ -1,59 +1,22 @@
-#!/usr/bin/env pwsh
-# Requires Inno Setup (ISCC.exe) on PATH. Publish outputs expected under repo `publish/` (see `build.ps1`).
-#requires -Version 7.0
-$ErrorActionPreference = "Stop"
+. "$PSScriptRoot\scriptHelper.ps1"; Set-Location -LiteralPath $repoRoot
 
-function Invoke-NativeCommand {
-    param(
-        [Parameter(Mandatory)][string]$What,
-        [Parameter(Mandatory)][string]$FilePath,
-        [Parameter(Mandatory)][string[]]$ArgumentList
-    )
-    & $FilePath @ArgumentList
-    if ($LASTEXITCODE -ne 0) {
-        throw "$What failed (exit $LASTEXITCODE): $FilePath $($ArgumentList -join ' ')"
-    }
+foreach ($d in $installerDefs) {
+    $exe = "$repoRoot\publish\$($d.Rid)\swagSMB.exe"
+    if (-not (Test-Path -LiteralPath $exe)) { throw "Missing publish output (run build.ps1 first): $exe" }
 }
 
-$root = Split-Path $PSScriptRoot -Parent
-$versionPath = Join-Path $root "src\version"
-if (-not (Test-Path -LiteralPath $versionPath)) { throw "Version file not found: $versionPath" }
-$ver = ([IO.File]::ReadAllText($versionPath)).Trim()
-if ([string]::IsNullOrWhiteSpace($ver)) { throw "Version file is empty: $versionPath" }
+if (Test-Path -LiteralPath $installerOutput) { Remove-Item $installerOutput -Recurse -Force }
+New-Item -ItemType Directory -Path $installerOutput -Force | Out-Null
 
-$required = @(
-    @{ Rid = "win-x64"; Iss = "swagSMB.x64.installer.iss" }
-    @{ Rid = "win-x86"; Iss = "swagSMB.x86.installer.iss" }
-    @{ Rid = "win-arm64"; Iss = "swagSMB.arm64.installer.iss" }
-)
-foreach ($r in $required) {
-    $stage = Join-Path $root "publish\$($r.Rid)"
-    if (-not (Test-Path -LiteralPath $stage)) {
-        throw "Missing publish output (run .\.scripts\build.ps1 first): $stage"
-    }
-    $exe = Join-Path $stage "swagSMB.exe"
-    if (-not (Test-Path -LiteralPath $exe)) {
-        throw "Expected built app not found: $exe"
-    }
-}
-
-$out = Join-Path $root ".installer\Output"
-if (Test-Path -LiteralPath $out) {
-    Write-Host "Cleaning $out"
-    Remove-Item -LiteralPath $out -Recurse -Force
-}
-New-Item -ItemType Directory -Path $out -Force | Out-Null
-
-$iscc = Get-Command ISCC.exe -ErrorAction Stop
-Push-Location -LiteralPath $root
+$iscc = (Get-Command ISCC.exe -ErrorAction Stop).Source
+Push-Location -LiteralPath $repoRoot
 try {
-    foreach ($r in $required) {
-        $iss = Join-Path $root ".installer\$($r.Iss)"
-        Write-Host "Building installer for $($r.Rid) (AppVersion=$ver)"
-        Invoke-NativeCommand -What "ISCC" -FilePath $iscc.Source -ArgumentList @("/DAppVersion=$ver", $iss)
+    foreach ($d in $installerDefs) {
+        $iss = "$repoRoot\.installer\$($d.Iss)"
+        Write-Host "Building $($d.Rid) (AppVersion=$versionContents)"
+        & $iscc "/DAppVersion=$versionContents" $iss
+        if ($LASTEXITCODE) { throw "ISCC failed ($LASTEXITCODE): $iss" }
     }
-    Write-Host "Done. Output: $out"
+    Write-Host "Done. Output: $installerOutput"
 }
-finally {
-    Pop-Location
-}
+finally { Pop-Location }

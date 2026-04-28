@@ -2,14 +2,40 @@
 
 GUI frontend for SMBLibrary with some extras and improved security. Windows only.
 
+<!-- Quick Reference --
+version = 1.0.1
+
+x64Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBInstaller_v1.0.1_x64.exe
+
+x86Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBInstaller_v1.0.1_x86.exe
+
+ARM64Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBInstaller_v1.0.1_arm64.exe
+
+x64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBPortable_v1.0.1_x64.exe
+
+x86Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBPortable_v1.0.1_x86.exe
+
+ARM64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBPortable_v1.0.1_arm64.exe
+-->
+
 ## Download
 
 <table border="0">
 <tbody>
 <tr>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.0/swagSMBInstaller_v1.0.0_x64.exe"><img src="./.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.0/swagSMBInstaller_v1.0.0_x86.exe"><img src="./.resources/svg/download_x86.svg" width="180" height="auto" alt="x86 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.0/swagSMBInstaller_v1.0.0_arm64.exe"><img src="./.resources/svg/download_arm.svg" width="180" height="auto" alt="ARM64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBInstaller_v1.0.1_x64.exe"><img src="./.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBInstaller_v1.0.1_x86.exe"><img src="./.resources/svg/download_x86.svg" width="180" height="auto" alt="x86 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBInstaller_v1.0.1_arm64.exe"><img src="./.resources/svg/download_arm.svg" width="180" height="auto" alt="ARM64 installer"/></a></td>
+</tr>
+</tbody>
+</table>
+
+<table border="0">
+<tbody>
+<tr>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBPortable_v1.0.1_x64.exe"><img src="./.resources/svg/download_portable_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBPortable_v1.0.1_x86.exe"><img src="./.resources/svg/download_portable_x86.svg" width="180" height="auto" alt="x86 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.1/swagSMBPortable_v1.0.1_arm64.exe"><img src="./.resources/svg/download_portable_arm64.svg" width="180" height="auto" alt="ARM64 installer"/></a></td>
 </tr>
 </tbody>
 </table>
