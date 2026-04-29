@@ -31,7 +31,7 @@ namespace swagSMB.UI
             Text = Color.FromArgb(220, 220, 220),
             Muted = Color.FromArgb(150, 150, 150),
             LogBack = Color.FromArgb(20, 20, 20),
-            LogFore = Color.FromArgb(200, 220, 200),
+            LogFore = Color.White,
             Link = Color.FromArgb(100, 180, 255),
             DgvHeader = Color.FromArgb(50, 50, 50),
             DgvLine = Color.FromArgb(60, 60, 60),
@@ -50,7 +50,7 @@ namespace swagSMB.UI
             Text = Color.FromArgb(248, 248, 242),
             Muted = Color.FromArgb(98, 114, 164),
             LogBack = Color.FromArgb(33, 34, 44),
-            LogFore = Color.FromArgb(248, 248, 242),
+            LogFore = Color.FromArgb(241, 250, 140),
             Link = Color.FromArgb(139, 233, 253),
             DgvHeader = Color.FromArgb(68, 71, 90),
             DgvLine = Color.FromArgb(68, 71, 90),
@@ -61,6 +61,8 @@ namespace swagSMB.UI
         };
 
         public const string MutedLabelTag = "uiMutedText";
+
+        public const string ToolbarGlyphInactiveTag = "uiToolbarGlyphInactive";
 
         public static UiThemeKind EffectiveTheme(UiThemeKind theme)
         {
@@ -258,6 +260,18 @@ namespace swagSMB.UI
                     StyleToolStripItem(tsmi, theme);
                 }
             }
+        }
+
+        private static bool IsToolbarGlyphInactiveButton(Control c)
+        {
+            if (c is not Button)
+            {
+                return false;
+            }
+
+            object tag = c.Tag;
+            return ReferenceEquals(tag, ToolbarGlyphInactiveTag)
+                   || (tag is string s && s == ToolbarGlyphInactiveTag);
         }
 
         private static ThemeColors GetThemeColors(UiThemeKind kind)
@@ -465,26 +479,43 @@ namespace swagSMB.UI
                 case CheckBox chk:
                     if (light)
                     {
+                        chk.FlatStyle = FlatStyle.Standard;
+                        chk.UseVisualStyleBackColor = true;
                         chk.BackColor = SystemColors.Control;
                         chk.ForeColor = SystemColors.ControlText;
                     }
                     else
                     {
                         chk.BackColor = s.Form;
-                        chk.ForeColor = s.Text;
+                        if (!chk.Enabled)
+                        {
+                            chk.UseVisualStyleBackColor = false;
+                            chk.FlatStyle = FlatStyle.Flat;
+                            chk.ForeColor = s.Muted;
+                            chk.FlatAppearance.BorderSize = 0;
+                            chk.FlatAppearance.MouseOverBackColor = s.Form;
+                            chk.FlatAppearance.MouseDownBackColor = s.Form;
+                            chk.FlatAppearance.CheckedBackColor = s.Form;
+                        }
+                        else
+                        {
+                            chk.FlatStyle = FlatStyle.Standard;
+                            chk.UseVisualStyleBackColor = true;
+                            chk.ForeColor = s.Text;
+                        }
                     }
                     break;
                 case Button b:
                     if (light)
                     {
                         b.BackColor = SystemColors.Control;
-                        b.ForeColor = SystemColors.ControlText;
+                        b.ForeColor = IsToolbarGlyphInactiveButton(b) ? SystemColors.GrayText : SystemColors.ControlText;
                         b.FlatStyle = FlatStyle.System;
                     }
                     else
                     {
                         b.BackColor = s.Surface;
-                        b.ForeColor = s.Text;
+                        b.ForeColor = IsToolbarGlyphInactiveButton(b) ? s.Muted : s.Text;
                         b.FlatStyle = FlatStyle.Flat;
                         b.FlatAppearance.BorderColor = s.ButtonBorder;
                     }
