@@ -22,7 +22,7 @@ namespace swagSMB.UI
     {
         private const string ClearAllSettingsConfirmationPhrase = "poopFart";
         private const string WindowsStartupRunValueName = "swagSMB";
-        private const int AboutTabIconPx = 256;
+        private const int AboutTabIconPx = 192;
         private const int PersistDebounceMs = 350;
         private const int LogFlushIntervalMs = 150;
         private const int MaxServerLogLines = 2000;
@@ -371,9 +371,9 @@ namespace swagSMB.UI
             securityPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             securityPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 32));
             securityPanel.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            _requireSigningCheckBox = new CheckBox { Text = "Require signing", Checked = _session.Config.Security.RequireSigning, AutoSize = true, Margin = new Padding(0, 4, 16, 4), Enabled = false };
-            _defaultEncryptionCheckBox = new CheckBox { Text = "Default encryption required", Checked = _session.Config.Security.DefaultRequireEncryption, AutoSize = true, Margin = new Padding(0, 4, 16, 4), Enabled = false };
-            _protocolLockCheckBox = new CheckBox { Text = "Lock protocol policy to SMB2.1 + SMB3.0", Checked = _session.Config.Security.LockProtocolToSmb21AndSmb30, AutoSize = true, Margin = new Padding(0, 4, 0, 4), Enabled = false };
+            _requireSigningCheckBox = new CheckBox { Text = "Require signing", Checked = _session.Config.Security.RequireSigning, AutoSize = true, Margin = new Padding(0, 4, 16, 4), AutoCheck = false, TabStop = false };
+            _defaultEncryptionCheckBox = new CheckBox { Text = "Default encryption required", Checked = _session.Config.Security.DefaultRequireEncryption, AutoSize = true, Margin = new Padding(0, 4, 16, 4), AutoCheck = false, TabStop = false };
+            _protocolLockCheckBox = new CheckBox { Text = "Lock protocol policy to SMB2.1 + SMB3.0", Checked = _session.Config.Security.LockProtocolToSmb21AndSmb30, AutoSize = true, Margin = new Padding(0, 4, 0, 4), AutoCheck = false, TabStop = false };
             const string upstreamSecurityToggleTip = "Not enforced (SMBLibrary 1.5.7 limitation). Server starts with SMB2/SMB3 only; SMB1 is hard-disabled in code.";
             _actionToolTip.SetToolTip(_requireSigningCheckBox, upstreamSecurityToggleTip);
             _actionToolTip.SetToolTip(_defaultEncryptionCheckBox, upstreamSecurityToggleTip);
@@ -656,7 +656,7 @@ namespace swagSMB.UI
             var aboutBetweenGroups = new Padding(0, 0, 0, 12);
             var appVersionLabel = new Label
             {
-                Text = $"swagSMB v{aboutVersion}  - Copyright (c) 2026 FosterBarnes",
+                Text = $"swagSMB v{aboutVersion}  - Copyright © 2026 FosterBarnes",
                 AutoSize = true,
                 Margin = aboutTightPair,
                 Padding = new Padding(0),
@@ -670,11 +670,45 @@ namespace swagSMB.UI
                 Margin = aboutBetweenGroups,
                 Padding = new Padding(0)
             };
-            var aboutGuiBlurbLabel = new Label
+            var aboutGuiLeadLabel = new Label
             {
-                Text = "GUI frontend for SMBLibrary with some extras and improved security.",
+                Text = "GUI frontend for SMBLibrary with some extras.",
                 AutoSize = true,
                 Margin = aboutTightPair,
+                Padding = new Padding(0),
+                TextAlign = ContentAlignment.TopLeft
+            };
+            var creditLink = new LinkLabel
+            {
+                Text = "Powered by SMBLibrary (TalAloni/SMBLibrary)",
+                AutoSize = true,
+                Margin = aboutBetweenGroups,
+                Padding = new Padding(0)
+            };
+            creditLink.LinkClicked += delegate
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = "https://github.com/TalAloni/SMBLibrary",
+                        UseShellExecute = true
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _globalStatusLabel.Text = "Unable to open browser: " + ex.Message;
+                }
+            };
+            var aboutGuiBlurbLabel = new Label
+            {
+                Text =
+                    "Easily create SMB shares with custom paths, usernames, passwords, and enforce SMB3.0. Works on port 5446 by default, "
+                    + "and intended to be separate from built-in Windows SMB functions. Locked by a master password with options for auto-run to tray. "
+                    + "Offers other useful features like exporting setup scripts that let you easily deploy your SMB shares on other Windows clients using PowerShell.",
+                AutoSize = true,
+                MaximumSize = new Size(680, 0),
+                Margin = new Padding(0, 0, 0, 0),
                 Padding = new Padding(0),
                 TextAlign = ContentAlignment.TopLeft
             };
@@ -693,13 +727,6 @@ namespace swagSMB.UI
                     _globalStatusLabel.Text = "Unable to open browser: " + ex.Message;
                 }
             };
-            var creditLink = new LinkLabel
-            {
-                Text = "Powered by SMBLibrary (TalAloni/SMBLibrary)",
-                AutoSize = true,
-                Margin = new Padding(0),
-                Padding = new Padding(0)
-            };
             var aboutTextStack = new FlowLayoutPanel
             {
                 FlowDirection = FlowDirection.TopDown,
@@ -710,23 +737,9 @@ namespace swagSMB.UI
             };
             aboutTextStack.Controls.Add(appVersionLabel);
             aboutTextStack.Controls.Add(repoLink);
-            aboutTextStack.Controls.Add(aboutGuiBlurbLabel);
+            aboutTextStack.Controls.Add(aboutGuiLeadLabel);
             aboutTextStack.Controls.Add(creditLink);
-            creditLink.LinkClicked += delegate
-            {
-                try
-                {
-                    Process.Start(new ProcessStartInfo
-                    {
-                        FileName = "https://github.com/TalAloni/SMBLibrary",
-                        UseShellExecute = true
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _globalStatusLabel.Text = "Unable to open browser: " + ex.Message;
-                }
-            };
+            aboutTextStack.Controls.Add(aboutGuiBlurbLabel);
             aboutBlurbRow.Controls.Add(aboutIconPicture, 0, 0);
             aboutBlurbRow.Controls.Add(aboutTextStack, 1, 0);
             aboutPanel.Controls.Add(aboutBlurbRow);
@@ -967,7 +980,8 @@ namespace swagSMB.UI
         private void UpdateRequireMasterPasswordTrayAvailability()
         {
             bool anyTray = _startMinimizedToTrayCheckBox.Checked || _closeToTrayCheckBox.Checked;
-            _requireMasterPasswordTrayCheckBox.Enabled = anyTray;
+            _requireMasterPasswordTrayCheckBox.AutoCheck = anyTray;
+            _requireMasterPasswordTrayCheckBox.TabStop = anyTray;
         }
 
         private void ThemeKindRadioCheckedChanged(object sender, EventArgs e)
@@ -1054,6 +1068,17 @@ namespace swagSMB.UI
                     dir = Application.StartupPath ?? ".";
                 }
 
+                string pngPath = Path.Combine(dir, "swag192.png");
+                if (File.Exists(pngPath))
+                {
+                    byte[] bytes = File.ReadAllBytes(pngPath);
+                    using (var ms = new MemoryStream(bytes, writable: false))
+                    using (var temp = new Bitmap(ms))
+                    {
+                        return new Bitmap(temp);
+                    }
+                }
+
                 string icoPath = Path.Combine(dir, "swag.ico");
                 if (!File.Exists(icoPath))
                 {
@@ -1109,7 +1134,8 @@ namespace swagSMB.UI
                 Margin = new Padding(4),
                 Text = glyph,
                 TextAlign = ContentAlignment.MiddleCenter,
-                Font = new Font("Segoe MDL2 Assets", 10f)
+                Font = new Font("Segoe MDL2 Assets", 10f),
+                UseVisualStyleBackColor = false
             };
             button.Click += clickHandler;
             _actionToolTip.SetToolTip(button, description);
@@ -1452,8 +1478,19 @@ namespace swagSMB.UI
         private void UpdateShareEnableButtons(ShareConfig selected)
         {
             bool sel = selected != null;
-            _enableShareButton.Enabled = sel && !selected.Enabled;
-            _disableShareButton.Enabled = sel && selected.Enabled;
+            bool canEnable = sel && !selected.Enabled;
+            bool canDisable = sel && selected.Enabled;
+
+            _enableShareButton.Enabled = true;
+            _disableShareButton.Enabled = true;
+            _enableShareButton.Tag = canEnable ? null : UiTheme.ToolbarGlyphInactiveTag;
+            _disableShareButton.Tag = canDisable ? null : UiTheme.ToolbarGlyphInactiveTag;
+            _enableShareButton.TabStop = canEnable;
+            _disableShareButton.TabStop = canDisable;
+            _enableShareButton.Cursor = canEnable ? Cursors.Default : Cursors.No;
+            _disableShareButton.Cursor = canDisable ? Cursors.Default : Cursors.No;
+
+            ApplyUiTheme();
         }
 
         private void RevealPathClick(object sender, EventArgs e)
