@@ -161,6 +161,7 @@ Start-Process powershell -ArgumentList "-NoProfile -Command Add-AppxProvisionedP
 
 # Remove Microsoft Store from package source
 Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile -Command "winget source remove msstore; winget source update"'
+
 ```
 
 Credit: [github.com/technoscavenger](https://gist.github.com/technoscavenger/37f06e23daa833d0c7bee1d378ff332e#file-installwinget-ps1)
@@ -169,6 +170,7 @@ Credit: [github.com/technoscavenger](https://gist.github.com/technoscavenger/37f
 
 ```
 winget install Microsoft.PowerShell
+
 ```
 
 Restart your computer. PowerShell may not show up in start menu correctly otherwise.
@@ -184,12 +186,14 @@ winget install Microsoft.DotNet.SDK.8
 winget install Git.Git
 winget install GitHub.cli
 winget install JRSoftware.InnoSetup
+
 ```
 
 Add Inno Setup to System PATH
 
 ```
 [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'Machine').TrimEnd(';') + ';' + (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6'), 'Machine')
+
 ```
 
 Close PowerShell before starting the next step. A full app refresh is required.
@@ -205,7 +209,8 @@ Example: `cd C:\Users\Foster\Documents`
 Clone this repo:
 
 ```
-git clone --recursive https://github.com/fosterbarnes/swagSMB && cd swagSMB/.scripts
+git clone --recursive https://github.com/fosterbarnes/swagSMB && cd swagSMB
+
 ```
 
 
@@ -213,6 +218,7 @@ Do a build test
 
 ```
 .\.scripts\.buildAll.ps1
+
 ```
 
 
@@ -220,6 +226,7 @@ Do a run test
 
 ```
 .\.scripts\.run.ps1
+
 ```
 
 Assuming everything went as planned, the app should be running! Check out the rest of the included scripts for semi-automatic github repo management.
