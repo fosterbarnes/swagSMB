@@ -242,9 +242,16 @@ namespace swagSMB.UI
                 FlowDirection = FlowDirection.LeftToRight,
                 WrapContents = true
             };
-            var startButton = new Button { Text = "Start", Width = 88, Height = 30 };
-            var stopButton = new Button { Text = "Stop", Width = 88, Height = 30 };
-            var restartButton = new Button { Text = "Restart", Width = 88, Height = 30 };
+            const int serverRowControlHeight = 30;
+            int ServerCheckboxPreferredWidth(string text)
+            {
+                int textWidth = TextRenderer.MeasureText(text, Font).Width;
+                return textWidth + 26;
+            }
+
+            var startButton = new Button { Text = "Start", Width = 88, Height = serverRowControlHeight, Margin = new Padding(3) };
+            var stopButton = new Button { Text = "Stop", Width = 88, Height = serverRowControlHeight, Margin = new Padding(3) };
+            var restartButton = new Button { Text = "Restart", Width = 88, Height = serverRowControlHeight, Margin = new Padding(3, 3, 10, 3) };
             var applyButton = new Button { Text = "Apply", Width = 88, Height = 30, Margin = new Padding(3) };
             var restoreToDefaultsButton = new Button
             {
@@ -254,37 +261,49 @@ namespace swagSMB.UI
                 Height = 30,
                 Margin = new Padding(3)
             };
-            _autoStartCheckBox = new CheckBox { Text = "Auto-start server after unlock", Width = 220, Height = 24, Checked = _session.Config.Server.AutoStartAfterUnlock };
+            _autoStartCheckBox = new CheckBox
+            {
+                Text = "Auto-start server after unlock",
+                Width = ServerCheckboxPreferredWidth("Auto-start server after unlock"),
+                Height = serverRowControlHeight,
+                Margin = new Padding(3),
+                Checked = _session.Config.Server.AutoStartAfterUnlock
+            };
             _startWithWindowsCheckBox = new CheckBox
             {
                 Text = "Start with Windows",
-                Width = 140,
-                Height = 24,
+                Width = ServerCheckboxPreferredWidth("Start with Windows"),
+                Height = serverRowControlHeight,
+                Margin = new Padding(3),
                 Checked = _session.Config.Server.StartWithWindows
             };
             _startWithWindowsCheckBox.CheckedChanged += StartWithWindowsCheckBoxCheckedChanged;
             _startMinimizedToTrayCheckBox = new CheckBox
             {
                 Text = "Start minimized to tray",
-                Width = 170,
-                Height = 24,
+                Width = ServerCheckboxPreferredWidth("Start minimized to tray"),
+                Height = serverRowControlHeight,
+                Margin = new Padding(3),
                 Checked = _session.Config.Server.StartMinimizedToTray
             };
             _closeToTrayCheckBox = new CheckBox
             {
                 Text = "Close to tray",
-                Width = 120,
-                Height = 24,
+                Width = ServerCheckboxPreferredWidth("Close to tray"),
+                Height = serverRowControlHeight,
+                Margin = new Padding(3),
                 Checked = _session.Config.Server.CloseToTray
             };
             _startMinimizedToTrayCheckBox.CheckedChanged += TrayRelatedOptionsChanged;
             _closeToTrayCheckBox.CheckedChanged += TrayRelatedOptionsChanged;
             _requireMasterPasswordTrayCheckBox = new CheckBox
             {
-                Text = "Require master password when starting to tray",
-                Width = 320,
-                Height = 24,
-                Checked = _session.Config.Server.RequireMasterPasswordWhenStartingToTray
+                Text = "Don't require password when starting to tray (still prompts for password on full app launch)",
+                Width = ServerCheckboxPreferredWidth(
+                    "Don't require password when starting to tray (still prompts for password on full app launch)"),
+                Height = serverRowControlHeight,
+                Margin = new Padding(3),
+                Checked = !_session.Config.Server.RequireMasterPasswordWhenStartingToTray
             };
             startButton.Click += StartServerClick;
             stopButton.Click += StopServerClick;
@@ -311,6 +330,7 @@ namespace swagSMB.UI
             serverActions.Controls.Add(restartButton);
             serverActions.Controls.Add(_autoStartCheckBox);
             serverActions.Controls.Add(_startWithWindowsCheckBox);
+            serverActions.SetFlowBreak(_startWithWindowsCheckBox, true);
             serverActions.Controls.Add(_closeToTrayCheckBox);
             serverActions.Controls.Add(_startMinimizedToTrayCheckBox);
             serverActions.Controls.Add(_requireMasterPasswordTrayCheckBox);
@@ -1304,7 +1324,7 @@ namespace swagSMB.UI
             _suppressStartWithWindowsEvent = false;
             _startMinimizedToTrayCheckBox.Checked = _session.Config.Server.StartMinimizedToTray;
             _closeToTrayCheckBox.Checked = _session.Config.Server.CloseToTray;
-            _requireMasterPasswordTrayCheckBox.Checked = _session.Config.Server.RequireMasterPasswordWhenStartingToTray;
+            _requireMasterPasswordTrayCheckBox.Checked = !_session.Config.Server.RequireMasterPasswordWhenStartingToTray;
             UpdateRequireMasterPasswordTrayAvailability();
             _requireSigningCheckBox.Checked = _session.Config.Security.RequireSigning;
             _defaultEncryptionCheckBox.Checked = _session.Config.Security.DefaultRequireEncryption;
@@ -1390,7 +1410,7 @@ namespace swagSMB.UI
             _session.Config.Server.StartWithWindows = _startWithWindowsCheckBox.Checked;
             _session.Config.Server.StartMinimizedToTray = _startMinimizedToTrayCheckBox.Checked;
             _session.Config.Server.CloseToTray = _closeToTrayCheckBox.Checked;
-            _session.Config.Server.RequireMasterPasswordWhenStartingToTray = _requireMasterPasswordTrayCheckBox.Checked;
+            _session.Config.Server.RequireMasterPasswordWhenStartingToTray = !_requireMasterPasswordTrayCheckBox.Checked;
             if (!_session.Config.Server.StartMinimizedToTray
                 || _session.Config.Server.RequireMasterPasswordWhenStartingToTray)
             {
@@ -1783,7 +1803,7 @@ namespace swagSMB.UI
             SaveUiToState();
             if (!EnsureAutoTrayConsent())
             {
-                _requireMasterPasswordTrayCheckBox.Checked = true;
+                _requireMasterPasswordTrayCheckBox.Checked = false;
                 _session.Config.Server.RequireMasterPasswordWhenStartingToTray = true;
                 _globalStatusLabel.Text = "Auto-tray not enabled (consent required).";
                 return;
@@ -1811,7 +1831,7 @@ namespace swagSMB.UI
 
             DialogResult choice = MessageBox.Show(
                 this,
-                "Auto-tray will store your master password on disk under DPAPI (Current User scope).\r\n\r\n" +
+                "Auto-tray will store your master password on disk protected by Windows DPAPI (current user only).\r\n\r\n" +
                 "Any program running as your Windows user can decrypt it and recover the master password, " +
                 "which would expose every share credential in your vault.\r\n\r\n" +
                 "Continue with auto-tray enabled?",
@@ -2326,7 +2346,8 @@ namespace swagSMB.UI
                     StartWithWindows = source.Server.StartWithWindows,
                     StartMinimizedToTray = source.Server.StartMinimizedToTray,
                     CloseToTray = source.Server.CloseToTray,
-                    RequireMasterPasswordWhenStartingToTray = source.Server.RequireMasterPasswordWhenStartingToTray
+                    RequireMasterPasswordWhenStartingToTray = source.Server.RequireMasterPasswordWhenStartingToTray,
+                    AutoTrayConsented = source.Server.AutoTrayConsented
                 },
                 Shares = source.Shares.Select(share => new ShareConfig
                 {

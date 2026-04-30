@@ -1,25 +1,25 @@
-# <img src="./.resources/icon/swag256.png" align="left" width="256"> swagSMB
+# swagSMB
 
-GUI frontend for SMBLibrary with some extras. Windows only.
+<img src="./.resources/icon/swag256.png" align="left" width="160">GUI frontend for SMBLibrary with some extras. Windows only.
 
 Easily create SMB shares with custom paths, usernames, passwords, and enforce SMB3.0. Works on port 5446 by default, and intended to be separate from built-in Windows SMB functions. Locked by a master password with options for auto-run to tray. Offers other useful features like exporting setup scripts that let you easily deploy your SMB shares on other Windows clients using PowerShell. 
 
 
 
 <!-- Quick Reference --
-version = 1.0.2
+version = 1.0.3
 
-x64Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBInstaller_v1.0.2_x64.exe
+x64Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBInstaller_v1.0.3_x64.exe
 
-x86Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBInstaller_v1.0.2_x86.exe
+x86Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBInstaller_v1.0.3_x86.exe
 
-ARM64Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBInstaller_v1.0.2_arm64.exe
+ARM64Installer = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBInstaller_v1.0.3_arm64.exe
 
-x64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBPortable_v1.0.2_x64.zip
+x64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBPortable_v1.0.3_x64.zip
 
-x86Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBPortable_v1.0.2_x86.zip
+x86Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBPortable_v1.0.3_x86.zip
 
-ARM64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBPortable_v1.0.2_arm64.zip
+ARM64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBPortable_v1.0.3_arm64.zip
 -->
 
 ## 
@@ -30,9 +30,9 @@ ARM64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2
 <table border="0">
 <tbody>
 <tr>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBInstaller_v1.0.2_x64.exe"><img src="./.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBInstaller_v1.0.2_x86.exe"><img src="./.resources/svg/download_x86.svg" width="180" height="auto" alt="x86 installer"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBInstaller_v1.0.2_arm64.exe"><img src="./.resources/svg/download_arm.svg" width="180" height="auto" alt="ARM64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBInstaller_v1.0.3_x64.exe"><img src="./.resources/svg/download_x64.svg" width="180" height="auto" alt="x64 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBInstaller_v1.0.3_x86.exe"><img src="./.resources/svg/download_x86.svg" width="180" height="auto" alt="x86 installer"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBInstaller_v1.0.3_arm64.exe"><img src="./.resources/svg/download_arm.svg" width="180" height="auto" alt="ARM64 installer"/></a></td>
 </tr>
 </tbody>
 </table>
@@ -40,14 +40,16 @@ ARM64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2
 <table border="0">
 <tbody>
 <tr>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBPortable_v1.0.2_x64.zip"><img src="./.resources/svg/download_portable_x64.svg" width="180" height="auto" alt="x64 insta"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBPortable_v1.0.2_x86.zip"><img src="./.resources/svg/download_portable_x86.svg" width="180" height="auto" alt="x86 portable"/></a></td>
-<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2/swagSMBPortable_v1.0.2_arm64.zip"><img src="./.resources/svg/download_portable_arm64.svg" width="180" height="auto" alt="ARM64 portable"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBPortable_v1.0.3_x64.zip"><img src="./.resources/svg/download_portable_x64.svg" width="180" height="auto" alt="x64 insta"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBPortable_v1.0.3_x86.zip"><img src="./.resources/svg/download_portable_x86.svg" width="180" height="auto" alt="x86 portable"/></a></td>
+<td align="center" valign="top"><a href="https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.3/swagSMBPortable_v1.0.3_arm64.zip"><img src="./.resources/svg/download_portable_arm64.svg" width="180" height="auto" alt="ARM64 portable"/></a></td>
 </tr>
 </tbody>
 </table>
 
 ## Screenshots
+
+### Tabs
 
 | <h3>Shares</h3> |
 |:---:|
@@ -61,14 +63,20 @@ ARM64Portable = https://github.com/fosterbarnes/swagSMB/releases/download/v1.0.2
 |:---:|
 | ![log](./.resources/scr/3.png) |
 
-| <h3>Theming</h3> |
+
+### Theming
+
+| <h3>Light</h3> |
 |:---:|
-| <h4>Light</h4> |
-| ![dark](./.resources/scr/4.png) |
-| <h4>Dark</h4> |
-| ![dark](./.resources/scr/5.png) |
-| <h4>Dracula</h4> |
-| ![dracula](./.resources/scr/6.png) |
+| ![log](./.resources/scr/4.png) |
+
+| <h3>Dark</h3> |
+|:---:|
+| ![log](./.resources/scr/5.png) |
+
+| <h3>Dracula</h3> |
+|:---:|
+| ![log](./.resources/scr/6.png) |
 
 ## Compatibility
 
