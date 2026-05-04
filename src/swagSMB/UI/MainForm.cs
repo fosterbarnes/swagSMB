@@ -84,6 +84,8 @@ namespace swagSMB.UI
         private readonly Queue<string> _pendingLogLines = new Queue<string>();
         private readonly Queue<string> _serverLogHistory = new Queue<string>();
         private DateTime _lastActivitySampleUtc;
+        private bool _idleLocked;
+        private System.Threading.SynchronizationContext _uiSync;
 
         public MainForm(AppConfigStore store, SessionContext session)
             : this(store, session, false)
@@ -96,6 +98,8 @@ namespace swagSMB.UI
             _suppressInitialShow = launchedToTray;
             _store = store ?? throw new ArgumentNullException(nameof(store));
             _session = session ?? throw new ArgumentNullException(nameof(session));
+            _uiSync = System.Threading.SynchronizationContext.Current
+                ?? new WindowsFormsSynchronizationContext();
             _serverHost = new SmbServerHost();
             _actionToolTip = new ToolTip();
             _trayIcon = new NotifyIcon { Text = "swagSMB", Visible = false };
@@ -940,22 +944,15 @@ namespace swagSMB.UI
 
         private void ShowFromTray()
         {
-            if (_session.Config.Server.RequireMasterPasswordWhenStartingToTray
-                && string.IsNullOrEmpty(_session.MasterPassword))
-            {
-                using (var verifyForm = new VerifyMasterPasswordForm(_store))
-                {
-                    if (verifyForm.ShowDialog(Visible ? this : null) != DialogResult.OK)
-                    {
-                        return;
-                    }
+            bool needsUnlock =
+                _idleLocked
+                || (_session.Config.Server.RequireMasterPasswordWhenStartingToTray
+                    && string.IsNullOrEmpty(_session.MasterPassword))
+                || (!_session.Config.Server.RequireMasterPasswordWhenStartingToTray
+                    && _session.Config.Server.StartMinimizedToTray
+                    && _trayStartMinimizedFirstGuiVerifyPending);
 
-                    _session.MasterPassword = verifyForm.VerifiedPassword;
-                }
-            }
-            else if (!_session.Config.Server.RequireMasterPasswordWhenStartingToTray
-                     && _session.Config.Server.StartMinimizedToTray
-                     && _trayStartMinimizedFirstGuiVerifyPending)
+            if (needsUnlock)
             {
                 using (var verifyForm = new VerifyMasterPasswordForm(_store))
                 {
@@ -968,6 +965,10 @@ namespace swagSMB.UI
                 }
 
                 _trayStartMinimizedFirstGuiVerifyPending = false;
+                _idleLocked = false;
+                _trayIcon.Text = "swagSMB";
+                ResetActivityTimer();
+                _activityTimer.Start();
             }
 
             ShowInTaskbar = true;
@@ -1930,14 +1931,23 @@ namespace swagSMB.UI
 
         private void AppendServerLogLine(string line)
         {
-            if (string.IsNullOrEmpty(line))
+            if (string.IsNullOrEmpty(line) || IsDisposed || !IsHandleCreated)
             {
                 return;
             }
 
             if (InvokeRequired)
             {
-                BeginInvoke(new Action<string>(AppendServerLogLine), line);
+                try
+                {
+                    BeginInvoke(new Action<string>(AppendServerLogLine), line);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                catch (InvalidOperationException)
+                {
+                }
                 return;
             }
 
@@ -2215,6 +2225,7 @@ namespace swagSMB.UI
 
         private void LaunchNewInstanceAndExit()
         {
+            FlushPendingConfigSave();
             _serverHost.ServerActivity -= AppendServerLogLine;
             _serverHost.Stop();
             _activityTimer.Stop();
@@ -2286,6 +2297,7 @@ namespace swagSMB.UI
             _saveWorkerActive = true;
             AppConfig snapshot = CloneConfig(_session.Config);
             string password = _session.MasterPassword;
+            System.Threading.SynchronizationContext sync = _uiSync;
             _saveTask = Task.Run(() =>
             {
                 var stopwatch = Stopwatch.StartNew();
@@ -2304,22 +2316,34 @@ namespace swagSMB.UI
                     stopwatch.Stop();
                 }
 
-                if (IsDisposed || !IsHandleCreated)
+                try
                 {
-                    return;
-                }
+                    sync.Post(_ =>
+                    {
+                        if (IsDisposed || !IsHandleCreated)
+                        {
+                            _saveWorkerActive = false;
+                            return;
+                        }
 
-                BeginInvoke(new Action(() =>
+                        _saveWorkerActive = false;
+                        if (error != null)
+                        {
+                            _globalStatusLabel.Text = "Save failed: " + error.Message;
+                        }
+
+                        Debug.WriteLine($"[Perf] PersistConfig worker took {stopwatch.ElapsedMilliseconds} ms.");
+                        StartPersistWorkerIfNeeded();
+                    }, null);
+                }
+                catch (ObjectDisposedException)
                 {
                     _saveWorkerActive = false;
-                    if (error != null)
-                    {
-                        _globalStatusLabel.Text = "Save failed: " + error.Message;
-                    }
-
-                    Debug.WriteLine($"[Perf] PersistConfig worker took {stopwatch.ElapsedMilliseconds} ms.");
-                    StartPersistWorkerIfNeeded();
-                }));
+                }
+                catch (InvalidOperationException)
+                {
+                    _saveWorkerActive = false;
+                }
             });
         }
 
@@ -2414,16 +2438,40 @@ namespace swagSMB.UI
 
         private void ActivityTimerTick(object sender, EventArgs e)
         {
+            if (_idleLocked || _session.MasterSecret.IsEmpty)
+            {
+                _activityTimer.Stop();
+                return;
+            }
+
             int lockMinutes = Math.Max(1, (int)_autoLockMinutesNumeric.Value);
             TimeSpan idle = DateTime.UtcNow - _lastActivityUtc;
             if (idle.TotalMinutes >= lockMinutes)
             {
-                _serverHost.Stop();
-                _activityTimer.Stop();
-                _session.MasterSecret.Clear();
-                _globalStatusLabel.Text = "Auto-lock timeout reached. App will close.";
-                _exitRequested = true;
-                Close();
+                LockSession();
+            }
+        }
+
+        private void LockSession()
+        {
+            if (_idleLocked || _session.MasterSecret.IsEmpty)
+            {
+                return;
+            }
+
+            FlushPendingConfigSave();
+            _session.MasterSecret.Clear();
+            _idleLocked = true;
+            _activityTimer.Stop();
+
+            _trayIcon.Text = "swagSMB (locked)";
+            _globalStatusLabel.Text = "Locked due to inactivity. Open from the tray to unlock.";
+
+            if (Visible)
+            {
+                _trayIcon.Visible = true;
+                Hide();
+                ShowInTaskbar = false;
             }
         }
 
@@ -2444,6 +2492,8 @@ namespace swagSMB.UI
             _saveDebounceTimer.Dispose();
             _logFlushTimer.Stop();
             _logFlushTimer.Dispose();
+            _activityTimer.Stop();
+            _activityTimer.Dispose();
             _serverHost.ServerActivity -= AppendServerLogLine;
             _serverHost.Stop();
             _trayIcon.Visible = false;

@@ -151,9 +151,11 @@ namespace swagSMB.Export
         private static void AppendExplorerShellFooter(StringBuilder sb)
         {
             sb.AppendLine();
-            sb.AppendLine("Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue");
-            sb.AppendLine("Start-Sleep -Milliseconds 600");
-            sb.AppendLine("Start-Process explorer.exe");
+            sb.AppendLine("# Refresh This PC so new/removed mappings appear without restarting Explorer.");
+            sb.AppendLine("try {");
+            sb.AppendLine("  $shell = New-Object -ComObject Shell.Application");
+            sb.AppendLine("  $shell.Namespace(0x11).Self.InvokeVerb('R&efresh') | Out-Null");
+            sb.AppendLine("} catch {}");
         }
 
         private static string FormatLocalPathArg(ShareConfig s)

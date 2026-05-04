@@ -8,9 +8,14 @@ namespace swagSMB.UI
 {
     public sealed class VerifyMasterPasswordForm : Form
     {
+        private const string RetryScope = UnlockRetryGuard.ScopeVerify;
+
         private readonly AppConfigStore _store;
         private readonly TextBox _passwordTextBox;
         private readonly Label _statusLabel;
+        private readonly Button _okButton;
+        private readonly Timer _cooldownTimer;
+        private string _statusBeforeCooldown;
 
         public string VerifiedPassword { get; private set; } = string.Empty;
 
@@ -55,7 +60,7 @@ namespace swagSMB.UI
             reveal.Left = 372;
             reveal.Top = 54;
 
-            var okButton = new Button
+            _okButton = new Button
             {
                 Text = "OK",
                 Width = 88,
@@ -63,7 +68,7 @@ namespace swagSMB.UI
                 Left = 316,
                 Top = 108
             };
-            okButton.Click += OkClick;
+            _okButton.Click += OkClick;
 
             var cancelButton = new Button
             {
@@ -79,11 +84,19 @@ namespace swagSMB.UI
             Controls.Add(passwordLabel);
             Controls.Add(_passwordTextBox);
             Controls.Add(reveal);
-            Controls.Add(okButton);
+            Controls.Add(_okButton);
             Controls.Add(cancelButton);
 
-            AcceptButton = okButton;
+            AcceptButton = _okButton;
             CancelButton = cancelButton;
+
+            _cooldownTimer = new Timer { Interval = 200 };
+            _cooldownTimer.Tick += CooldownTimerTick;
+            FormClosed += (_, __) =>
+            {
+                _cooldownTimer.Stop();
+                _cooldownTimer.Dispose();
+            };
 
             Shown += (_, __) =>
             {
@@ -91,6 +104,50 @@ namespace swagSMB.UI
             };
 
             UiTheme.Apply(this, _store.LoadUiPreferences().Theme, null);
+        }
+
+        private void StartCooldown()
+        {
+            if (UnlockRetryGuard.RemainingCooldown(RetryScope) <= TimeSpan.Zero)
+            {
+                return;
+            }
+
+            _statusBeforeCooldown = _statusLabel.Text;
+            _okButton.Enabled = false;
+            _cooldownTimer.Start();
+            UpdateCooldownLabel();
+        }
+
+        private void UpdateCooldownLabel()
+        {
+            TimeSpan remaining = UnlockRetryGuard.RemainingCooldown(RetryScope);
+            if (remaining <= TimeSpan.Zero)
+            {
+                return;
+            }
+
+            int seconds = (int)Math.Ceiling(remaining.TotalSeconds);
+            string baseText = string.IsNullOrEmpty(_statusBeforeCooldown)
+                ? "Incorrect master password."
+                : _statusBeforeCooldown;
+            _statusLabel.Text = baseText + " Try again in " + seconds + "s.";
+        }
+
+        private void CooldownTimerTick(object sender, EventArgs e)
+        {
+            if (UnlockRetryGuard.RemainingCooldown(RetryScope) > TimeSpan.Zero)
+            {
+                UpdateCooldownLabel();
+                return;
+            }
+
+            _cooldownTimer.Stop();
+            _okButton.Enabled = true;
+            if (!string.IsNullOrEmpty(_statusBeforeCooldown))
+            {
+                _statusLabel.Text = _statusBeforeCooldown;
+            }
         }
 
         private void FocusPassword()
@@ -112,7 +169,7 @@ namespace swagSMB.UI
                 return;
             }
 
-            if (UnlockRetryGuard.LimitReached)
+            if (UnlockRetryGuard.IsLimitReached(RetryScope))
             {
                 _statusLabel.Text = "Too many failed attempts.";
                 DialogResult = DialogResult.Cancel;
@@ -122,19 +179,20 @@ namespace swagSMB.UI
 
             if (!_store.TryVerifyMasterPassword(pw))
             {
-                UnlockRetryGuard.RegisterFailure();
-                if (UnlockRetryGuard.LimitReached)
+                UnlockRetryGuard.RegisterFailure(RetryScope);
+                if (UnlockRetryGuard.IsLimitReached(RetryScope))
                 {
                     _statusLabel.Text = "Too many failed attempts.";
                     DialogResult = DialogResult.Cancel;
                     Close();
                     return;
                 }
-                _statusLabel.Text = "Incorrect master password. " + UnlockRetryGuard.FailuresRemaining + " attempt(s) remaining.";
+                _statusLabel.Text = "Incorrect master password. " + UnlockRetryGuard.FailuresRemaining(RetryScope) + " attempt(s) remaining.";
+                StartCooldown();
                 return;
             }
 
-            UnlockRetryGuard.Reset();
+            UnlockRetryGuard.Reset(RetryScope);
             VerifiedPassword = pw;
             DialogResult = DialogResult.OK;
             Close();

@@ -9,6 +9,8 @@ namespace swagSMB
 {
     internal static class Program
     {
+        private static SynchronizationContext s_uiSync;
+
         [STAThread]
         private static void Main()
         {
@@ -17,6 +19,9 @@ namespace swagSMB
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
+
+            s_uiSync = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
+            SynchronizationContext.SetSynchronizationContext(s_uiSync);
 
             var store = new AppConfigStore();
 
@@ -105,11 +110,36 @@ namespace swagSMB
         private static void HandleUnhandledException(Exception exception)
         {
             System.Diagnostics.Debug.WriteLine("[Unhandled] " + exception);
-            MessageBox.Show(
-                "swagSMB hit an unexpected error and may need to be restarted.",
-                "swagSMB",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Error);
+
+            void ShowDialog()
+            {
+                try
+                {
+                    MessageBox.Show(
+                        "swagSMB hit an unexpected error and may need to be restarted.",
+                        "swagSMB",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Error);
+                }
+                catch
+                {
+                }
+            }
+
+            SynchronizationContext sync = s_uiSync;
+            if (sync != null && sync != SynchronizationContext.Current)
+            {
+                try
+                {
+                    sync.Post(_ => ShowDialog(), null);
+                    return;
+                }
+                catch
+                {
+                }
+            }
+
+            ShowDialog();
         }
     }
 }

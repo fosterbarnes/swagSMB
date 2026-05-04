@@ -248,6 +248,20 @@ namespace swagSMB.Core
                     continue;
                 }
 
+                string trimmedName = share.ShareName.Trim();
+                if (!ShareValidator.IsShareNameValid(trimmedName, out string nameReason))
+                {
+                    if (logDiagnostics)
+                    {
+                        RaiseActivity(string.Format(
+                            "[{0:HH:mm:ss}] [Share] Skipped '{1}': {2}",
+                            DateTime.Now,
+                            share.ShareName,
+                            nameReason));
+                    }
+                    continue;
+                }
+
                 if (!ShareValidator.IsLocalPathSafe(share.LocalPath, out string pathReason))
                 {
                     if (logDiagnostics)

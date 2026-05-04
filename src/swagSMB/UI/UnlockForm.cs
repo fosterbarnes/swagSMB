@@ -9,6 +9,8 @@ namespace swagSMB.UI
 {
     public sealed class UnlockForm : Form
     {
+        private const string RetryScope = UnlockRetryGuard.ScopeUnlock;
+
         private readonly AppConfigStore _store;
         private readonly TextBox _masterPasswordTextBox;
         private readonly TextBox _confirmPasswordTextBox;
@@ -16,6 +18,8 @@ namespace swagSMB.UI
         private readonly Label _strengthLabel;
         private readonly Button _unlockButton;
         private readonly Button _cancelButton;
+        private readonly Timer _cooldownTimer;
+        private string _statusBeforeCooldown;
 
         public SessionContext SessionContext { get; private set; }
 
@@ -141,7 +145,59 @@ namespace swagSMB.UI
             AcceptButton = _unlockButton;
             CancelButton = _cancelButton;
 
+            _cooldownTimer = new Timer { Interval = 200 };
+            _cooldownTimer.Tick += CooldownTimerTick;
+            FormClosed += (_, __) =>
+            {
+                _cooldownTimer.Stop();
+                _cooldownTimer.Dispose();
+            };
+
             UiTheme.Apply(this, _store.LoadUiPreferences().Theme, null);
+        }
+
+        private void StartCooldown()
+        {
+            if (UnlockRetryGuard.RemainingCooldown(RetryScope) <= TimeSpan.Zero)
+            {
+                return;
+            }
+
+            _statusBeforeCooldown = _descriptionLabel.Text;
+            _unlockButton.Enabled = false;
+            _cooldownTimer.Start();
+            UpdateCooldownLabel();
+        }
+
+        private void UpdateCooldownLabel()
+        {
+            TimeSpan remaining = UnlockRetryGuard.RemainingCooldown(RetryScope);
+            if (remaining <= TimeSpan.Zero)
+            {
+                return;
+            }
+
+            int seconds = (int)Math.Ceiling(remaining.TotalSeconds);
+            string baseText = string.IsNullOrEmpty(_statusBeforeCooldown)
+                ? "Unlock failed."
+                : _statusBeforeCooldown;
+            _descriptionLabel.Text = baseText + " Try again in " + seconds + "s.";
+        }
+
+        private void CooldownTimerTick(object sender, EventArgs e)
+        {
+            if (UnlockRetryGuard.RemainingCooldown(RetryScope) > TimeSpan.Zero)
+            {
+                UpdateCooldownLabel();
+                return;
+            }
+
+            _cooldownTimer.Stop();
+            _unlockButton.Enabled = true;
+            if (!string.IsNullOrEmpty(_statusBeforeCooldown))
+            {
+                _descriptionLabel.Text = _statusBeforeCooldown;
+            }
         }
 
         private void UnlockButtonClick(object sender, EventArgs e)
@@ -156,7 +212,7 @@ namespace swagSMB.UI
                 return;
             }
 
-            if (UnlockRetryGuard.LimitReached)
+            if (UnlockRetryGuard.IsLimitReached(RetryScope))
             {
                 _descriptionLabel.Text = "Too many failed attempts. The app will close.";
                 DialogResult = DialogResult.Cancel;
@@ -199,15 +255,15 @@ namespace swagSMB.UI
                     };
                 }
 
-                UnlockRetryGuard.Reset();
+                UnlockRetryGuard.Reset(RetryScope);
                 DialogResult = DialogResult.OK;
                 Close();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine("[Unlock] " + ex);
-                UnlockRetryGuard.RegisterFailure();
-                if (UnlockRetryGuard.LimitReached)
+                UnlockRetryGuard.RegisterFailure(RetryScope);
+                if (UnlockRetryGuard.IsLimitReached(RetryScope))
                 {
                     _descriptionLabel.Text = "Too many failed attempts. The app will close.";
                     DialogResult = DialogResult.Cancel;
@@ -215,7 +271,8 @@ namespace swagSMB.UI
                     return;
                 }
 
-                _descriptionLabel.Text = "Unlock failed. " + UnlockRetryGuard.FailuresRemaining + " attempt(s) remaining.";
+                _descriptionLabel.Text = "Unlock failed. " + UnlockRetryGuard.FailuresRemaining(RetryScope) + " attempt(s) remaining.";
+                StartCooldown();
             }
         }
     }

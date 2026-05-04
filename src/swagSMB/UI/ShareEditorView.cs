@@ -190,9 +190,9 @@ namespace swagSMB.UI
                 return false;
             }
 
-            if (_shareNameTextBox.Text.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            if (!Models.ShareValidator.IsShareNameValid(_shareNameTextBox.Text.Trim(), out string nameReason))
             {
-                message = "Share name contains invalid characters.";
+                message = nameReason ?? "Share name is invalid.";
                 return false;
             }
 

@@ -53,6 +53,35 @@ namespace swagSMB.Storage
             _trayKeyFilePath = Path.Combine(_baseDirectory, "tray.key");
             _trayEntropyFilePath = Path.Combine(_baseDirectory, "tray.entropy");
             _uiPreferencesFilePath = Path.Combine(_baseDirectory, "ui.json");
+
+            try
+            {
+                if (Directory.Exists(_baseDirectory))
+                {
+                    SweepStaleTempFiles(_baseDirectory);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static void SweepStaleTempFiles(string directory)
+        {
+            DateTime cutoff = DateTime.UtcNow.AddMinutes(-1);
+            foreach (string path in Directory.EnumerateFiles(directory, "*.tmp"))
+            {
+                try
+                {
+                    if (File.GetLastWriteTimeUtc(path) < cutoff)
+                    {
+                        File.Delete(path);
+                    }
+                }
+                catch
+                {
+                }
+            }
         }
 
         public string ConfigFilePath => _configFilePath;
@@ -92,7 +121,7 @@ namespace swagSMB.Storage
             try
             {
                 Directory.CreateDirectory(_baseDirectory);
-                File.WriteAllBytes(_trayEntropyFilePath, fresh);
+                WriteAllBytesAtomically(_trayEntropyFilePath, fresh);
             }
             catch
             {
@@ -144,7 +173,7 @@ namespace swagSMB.Storage
             {
                 Directory.CreateDirectory(_baseDirectory);
                 string json = JsonConvert.SerializeObject(flags, Formatting.Indented);
-                File.WriteAllText(_trayFlagsFilePath, json);
+                WriteAllBytesAtomically(_trayFlagsFilePath, Encoding.UTF8.GetBytes(json));
             }
             catch
             {
@@ -201,7 +230,7 @@ namespace swagSMB.Storage
             {
                 Directory.CreateDirectory(_baseDirectory);
                 string json = JsonConvert.SerializeObject(preferences, UiPreferencesSerializerSettings);
-                File.WriteAllText(_uiPreferencesFilePath, json);
+                WriteAllBytesAtomically(_uiPreferencesFilePath, Encoding.UTF8.GetBytes(json));
             }
             catch
             {
@@ -233,7 +262,7 @@ namespace swagSMB.Storage
                 byte[] entropy = LoadOrCreateTrayEntropy();
                 byte[] plain = Encoding.UTF8.GetBytes(masterPassword);
                 byte[] protectedBytes = ProtectedData.Protect(plain, entropy, DataProtectionScope.CurrentUser);
-                File.WriteAllBytes(_trayKeyFilePath, protectedBytes);
+                WriteAllBytesAtomically(_trayKeyFilePath, protectedBytes);
                 Array.Clear(plain, 0, plain.Length);
             }
             catch
@@ -361,16 +390,33 @@ namespace swagSMB.Storage
 
         private static void WriteAllBytesAtomically(string path, byte[] contents)
         {
-            string tempPath = path + ".tmp";
-            File.WriteAllBytes(tempPath, contents);
-
-            if (File.Exists(path))
+            string tempPath = path + "." + Path.GetRandomFileName() + ".tmp";
+            try
             {
-                File.Replace(tempPath, path, null);
-                return;
-            }
+                File.WriteAllBytes(tempPath, contents);
 
-            File.Move(tempPath, path);
+                if (File.Exists(path))
+                {
+                    File.Replace(tempPath, path, null);
+                    return;
+                }
+
+                File.Move(tempPath, path);
+            }
+            catch
+            {
+                try
+                {
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+                catch
+                {
+                }
+                throw;
+            }
         }
     }
 }
